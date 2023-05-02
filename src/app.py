@@ -5,9 +5,10 @@ from db import User
 from db import Clothing
 from db import Outfit
 from db import Tag
+from db import Asset
 
 app = Flask(__name__)
-db_filename = "clothes.db"
+db_filename = "ootd.db"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_filename}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -23,6 +24,22 @@ def success_response(data, code=200):
 
 def failure_response(message, code=404):
     return json.dumps({"error": message}), code
+
+# upload route
+@app.route("/upload/", methods=["POST"])
+def upload():
+    """
+    Endpoint for uploading an image to AWS given its base64 form,
+    then storing/returning the URL of that image
+    """
+    body = json.loads(request.data)
+    image_data = body.get("image_data")
+    if image_data is None:
+        return failure_response("No base64 image found")
+    asset = Asset(image_data=image_data)
+    db.session.add(asset)
+    db.session.commit()
+    return success_response(asset.serialize(), 201)
 
 # user routes
 #   SignUp User (Create User)
@@ -56,13 +73,13 @@ def create_user():
 
 # clothing routes
 #   Create Clothing
-#   Get Clothing
+#   Get Clothing list by user
 #   Delete Clothing
 
 # Outfit Routes
 #   Create Outfit
 #   Delete Outfit
-#   Get Outfit
+#   Get Outfit list by user
 
 # Tag Routes
 #   Add tag
