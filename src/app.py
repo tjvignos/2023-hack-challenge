@@ -27,22 +27,6 @@ def success_response(data, code=200):
 def failure_response(message, code=404):
     return json.dumps({"error": message}), code
 
-# upload route
-@app.route("/upload/", methods=["POST"])
-def upload():
-    """
-    Endpoint for uploading an image to AWS given its base64 form,
-    then storing/returning the URL of that image
-    """
-    body = json.loads(request.data)
-    image_data = body.get("image_data")
-    if image_data is None:
-        return failure_response("No base64 image found")
-    asset = Asset(image_data=image_data)
-    db.session.add(asset)
-    db.session.commit()
-    return success_response(asset.serialize(), 201)
-
 # authentication method
 def extract_token(request):
     """
@@ -81,7 +65,7 @@ def register_account():
 
     if not created:
         return failure_response("User already exists", 400)
-    
+
     return success_response(
         {
             "session_token": user.session_token,
@@ -169,18 +153,124 @@ def secret_message():
 
 # clothing routes
 #   Create Clothing
+
+@app.route("/clothing/", methods=["POST"])
+def upload():
+    """
+    Endpoint for uploading an image to AWS given its base64 form,
+    adding the image to the clothing table, then returning the
+    serialized clothing object
+    """
+    body = json.loads(request.data)
+    classification = body.get("classification")
+    user_id = body.get("user_id")
+    image_data = body.get("image_data")
+    if image_data is None:
+        return failure_response("No base64 image found")
+    asset = Asset(image_data=image_data)
+    db.session.add(asset)
+    db.session.commit()
+    clothing = Clothing(
+        asset_id = asset.id,
+        classification = classification,
+        user_id = user_id
+    )
+    db.session.add(clothing)
+    db.session.commit()
+    return success_response(asset.serialize(), 201)
+
 #   Get Clothing list by user
+
+@app.route("/clothing/<int:user_id>/")
+def get_clothing(user_id):
+    """
+    Endpoint for getting a list of clothing by user id
+    """
+    clothing = [clothes.serialize() for clothes in Clothing.query.filter_by(user_id=user_id)]
+    return success_response({"clothing": clothing})
+
 #   Delete Clothing
+
+@app.route("/clothing/<int:id>/", methods=["DELETE"])
+def delete_clothing(id):
+    """
+    Endpoint for deleting clothing by id
+    """
+    clothing = Clothing.query.filter_by(id=id).first()
+    if clothing is None:
+        return failure_response("Clothing not found")
+    db.session.delete(clothing)
+    db.session.commit()
+    return success_response(clothing.serialize())
 
 # Outfit Routes
 #   Create Outfit
-#   Delete Outfit
+
+@app.route("/outfit/", methods=["POST"])
+def create_outfit():
+    """
+    Endpoint for creating an outfit
+    """
+    body = json.loads(request.data)
+    headwear_id = body.get("headwear_id")
+    top_id = body.get("top_id")
+    bottom_id = body.get("bottom_id")
+    shoes_id = body.get("shoes_id")
+    user_id = body.get("user_id")
+    outfit = Outfit(
+        headwear_id = headwear_id,
+        top_id = top_id,
+        bottom_id = bottom_id,
+        shoes_id = shoes_id,
+        user_id = user_id
+    )
+    db.session.add(outfit)
+    db.session.commit()
+    return success_response(outfit.serialize(), 201)
+
 #   Get Outfit list by user
+
+@app.route("/outfit/<int:user_id>/")
+def get_outfits(user_id):
+    """
+    Endpoint for getting all outfits by user id
+    """
+    outfits = [outfit.serialize() for outfit in Outfit.query.filter_by(user_id=user_id)]
+    return success_response({"outfits": outfits})
+
+#   Delete Outfit
+
+@app.route("/outfit/<int:id>/", methods=["DELETE"])
+def delete_outfit(id):
+    """
+    Endpoint for deleting an outfit by id
+    """
+    outfit = Outfit.query.filter_by(id=id).first()
+    if outfit is None:
+        return failure_response("Outfit not found")
+    db.session.delete(outfit)
+    db.session.commit()
+    return success_response(outfit.serialize())
 
 # Tag Routes
 #   Add tag
-#   Remove tag
 
+@app.route("/tag/<int:outfit_id>/", methods=["POST"])
+def add_tag(outfit_id):
+    """
+    Endpoint for creating and adding a tag to an outfit by outfit id
+    """
+    body = json.loads(request.data)
+    label = body.get("label")
+    tag = Tag.query.filter_by(label=label).first()
+    if tag is None:
+        tag = Tag(label=label)
+        db.session.add(tag)
+    if label is None:
+        return failure_response("Lable not present", 400)
+    outfit = Outfit.query.filter_by(id=outfit_id).first()
+    outfit.tags.append(tag)
+    db.session.commit()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)

@@ -170,7 +170,12 @@ class User(db.Model):
         """
         return update_token == self.update_token
     
-    
+    def get_user_id(self):
+        """
+        Serializes a user object
+        """
+        return id
+
     
 class Clothing(db.Model):
     """
@@ -178,6 +183,7 @@ class Clothing(db.Model):
     """
     __tablename__ = "clothing"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    asset_id = db.Column(db.Integer, nullable=False)
     classification = db.Column(db.String, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
@@ -185,6 +191,7 @@ class Clothing(db.Model):
         """
         Initializes a clothing object
         """
+        self.asset_id = kwargs.get("asset_id")
         self.classification = kwargs.get("classification")
         self.user_id = kwargs.get("user_id")
 
@@ -194,6 +201,7 @@ class Clothing(db.Model):
         """
         return {
             "id": self.id,
+            "asset_id": self.asset_id,
             "classification": self.classification,
             "user_id": self.user_id
         }
@@ -204,11 +212,11 @@ class Outfit(db.Model):
     """
     __tablename__ = "outfit"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String, nullable=False)
     headwear_id = db.Column(db.Integer, db.ForeignKey("clothing.id"))
     top_id = db.Column(db.Integer, db.ForeignKey("clothing.id"))
     bottom_id = db.Column(db.Integer, db.ForeignKey("clothing.id"))
     shoes_id = db.Column(db.Integer, db.ForeignKey("clothing.id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     tags = db.relationship("Tag", secondary=association_table)
 
     def __init__(self, **kwargs):
@@ -227,7 +235,6 @@ class Outfit(db.Model):
         tag_list = [i.serialize() for i in self.tags]
         return {
             "id": self.id,
-            "name": self.name,
             "tags": tag_list
         }
 
