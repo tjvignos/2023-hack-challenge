@@ -220,7 +220,7 @@ def filter_clothing():
     username = body.get("username")
     classification = body.get("classification")
     user = User.query.filter_by(username=username).first()
-    return [clothing.serialize() for clothing in Clothing.query.filter_by(user_id=user.id, classification=classification)]
+    return [clothing.asset_serialize() for clothing in Clothing.query.filter_by(user_id=user.id, classification=classification)]
 
 #   Delete Clothing
 

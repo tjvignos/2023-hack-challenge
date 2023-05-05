@@ -208,6 +208,17 @@ class Clothing(db.Model):
             "user_id": self.user_id
         }
     
+    def asset_serialize(self):
+        """
+        Serializes a clothing object with all clothing ids
+        and links to images
+        """
+        asset = Asset.query.filter_by(id=self.asset_id).first()
+        return {
+            "id": self.id,
+            "asset": asset.serialize()
+        }
+    
 class Outfit(db.Model):
     """
     Outfit model
