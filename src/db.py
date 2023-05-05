@@ -170,11 +170,14 @@ class User(db.Model):
         """
         return update_token == self.update_token
     
-    def get_user_id(self):
+    def serialize(self):
         """
         Serializes a user object
         """
-        return id
+        return {
+            "id": self.id,
+            "username": self.username
+        }
 
     
 class Clothing(db.Model):

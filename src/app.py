@@ -151,6 +151,23 @@ def secret_message():
     
     return success_response({"message": "Wow we implemented session token!!"})
 
+@app.route("/user/id/", methods=["POST"])
+def get_user_id():
+    """
+    Gets user_id by username
+    """
+    body = json.loads(request.data)
+    username = body.get("username")
+    user = User.query.filter_by(username=username).first()
+    return str(user.id)
+
+@app.route("/user/list/")
+def user_list():
+    """
+    Endpoint for getting a list of all users
+    """
+    return [user.serialize() for user in User.query.all()]
+
 # clothing routes
 #   Create Clothing
 
@@ -182,12 +199,15 @@ def upload():
 
 #   Get Clothing list by user
 
-@app.route("/clothing/<int:user_id>/")
-def get_clothing(user_id):
+@app.route("/clothing/", methods=["POST"])
+def get_clothing():
     """
-    Endpoint for getting a list of clothing by user id
+    Endpoint for getting a list of clothing by username
     """
-    clothing = [clothes.serialize() for clothes in Clothing.query.filter_by(user_id=user_id)]
+    body = json.loads(request.data)
+    username = body.get("username")
+    user = User.query.filter_by(username=username).first()
+    clothing = [clothes.serialize() for clothes in Clothing.query.filter_by(user_id=user.id)]
     return success_response({"clothing": clothing})
 
 #   Delete Clothing
@@ -217,13 +237,14 @@ def create_outfit():
     top_id = body.get("top_id")
     bottom_id = body.get("bottom_id")
     shoes_id = body.get("shoes_id")
-    user_id = body.get("user_id")
+    username = body.get("username")
+    user = User.query.filter_by(username=username).first()
     outfit = Outfit(
         headwear_id = headwear_id,
         top_id = top_id,
         bottom_id = bottom_id,
         shoes_id = shoes_id,
-        user_id = user_id
+        user_id = user.id
     )
     db.session.add(outfit)
     db.session.commit()
@@ -231,12 +252,15 @@ def create_outfit():
 
 #   Get Outfit list by user
 
-@app.route("/outfit/<int:user_id>/")
-def get_outfits(user_id):
+@app.route("/outfit/", methods=["POST"])
+def get_outfits():
     """
     Endpoint for getting all outfits by user id
     """
-    outfits = [outfit.serialize() for outfit in Outfit.query.filter_by(user_id=user_id)]
+    body = json.loads(request.data)
+    username = body.get("username")
+    user = User.query.filter_by(username=username).first()
+    outfits = [outfit.serialize() for outfit in Outfit.query.filter_by(user_id=user.id)]
     return success_response({"outfits": outfits})
 
 #   Delete Outfit
