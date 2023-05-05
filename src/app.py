@@ -163,17 +163,18 @@ def upload():
     """
     body = json.loads(request.data)
     classification = body.get("classification")
-    user_id = body.get("user_id")
+    username = body.get("username")
     image_data = body.get("image_data")
     if image_data is None:
         return failure_response("No base64 image found")
     asset = Asset(image_data=image_data)
     db.session.add(asset)
     db.session.commit()
+    user = User.query.filter_by(username=username).first()
     clothing = Clothing(
         asset_id = asset.id,
         classification = classification,
-        user_id = user_id
+        user_id = user.id
     )
     db.session.add(clothing)
     db.session.commit()
