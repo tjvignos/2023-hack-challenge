@@ -251,6 +251,19 @@ class Outfit(db.Model):
             "name": self.name,
             "tags": tag_list
         }
+    
+    def simple_serialize(self):
+        """
+        Serializes an outfit object with the ids of
+        each piece of clothing in the outfit
+        """
+        return {
+            "name": self.name,
+            "headwear_id": self.headwear_id,
+            "top_id": self.top_id,
+            "bottom_id": self.bottom_id,
+            "shoes_id": self.shoes_id
+        }
 
 class Tag(db.Model):
     """

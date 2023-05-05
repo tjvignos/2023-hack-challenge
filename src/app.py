@@ -279,7 +279,7 @@ def get_outfits():
     body = json.loads(request.data)
     username = body.get("username")
     user = User.query.filter_by(username=username).first()
-    outfits = [outfit.serialize() for outfit in Outfit.query.filter_by(user_id=user.id)]
+    outfits = [outfit.simple_serialize() for outfit in Outfit.query.filter_by(user_id=user.id)]
     return success_response({"outfits": outfits})
 
 #   Delete Outfit
