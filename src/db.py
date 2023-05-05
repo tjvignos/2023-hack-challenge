@@ -208,16 +208,13 @@ class Clothing(db.Model):
             "user_id": self.user_id
         }
     
-    def asset_serialize(self):
+    def get_link(self):
         """
         Serializes a clothing object with all clothing ids
         and links to images
         """
         asset = Asset.query.filter_by(id=self.asset_id).first()
-        return {
-            "id": self.id,
-            "asset": asset.serialize()
-        }
+        return f"{asset.base_url}/{asset.salt}.{asset.extension}"
     
 class Outfit(db.Model):
     """
@@ -225,6 +222,7 @@ class Outfit(db.Model):
     """
     __tablename__ = "outfit"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String, nullable=False)
     headwear_id = db.Column(db.Integer, db.ForeignKey("clothing.id"))
     top_id = db.Column(db.Integer, db.ForeignKey("clothing.id"))
     bottom_id = db.Column(db.Integer, db.ForeignKey("clothing.id"))
@@ -236,10 +234,12 @@ class Outfit(db.Model):
         """
         Initializes an outfit object
         """
+        self.name = kwargs.get("name")
         self.headwear_id = kwargs.get("headwear_id")
         self.top_id = kwargs.get("top_id")
         self.bottom_id = kwargs.get("bottom_id")
         self.shoes_id = kwargs.get("shoes_id")
+        self.user_id = kwargs.get("user_id")
 
     def serialize(self):
         """
@@ -248,6 +248,7 @@ class Outfit(db.Model):
         tag_list = [i.serialize() for i in self.tags]
         return {
             "id": self.id,
+            "name": self.name,
             "tags": tag_list
         }
 
@@ -258,6 +259,7 @@ class Tag(db.Model):
     __tablename__ = "tag"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     label = db.Column(db.String, nullable=False)
+    outfits = db.relationship("Outfit", secondary=association_table)
 
     def __init__(self, **kwargs):
         """

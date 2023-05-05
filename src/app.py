@@ -154,24 +154,24 @@ def secret_message():
 @app.route("/user/id/", methods=["POST"])
 def get_user_id():
     """
-    Gets user_id by username
+    Endpoint for getting user_id by username
     """
     body = json.loads(request.data)
     username = body.get("username")
     user = User.query.filter_by(username=username).first()
-    return str(user.id)
+    return success_response({"user_id": str(user.id)})
 
 @app.route("/user/list/")
 def user_list():
     """
     Endpoint for getting a list of all users
     """
-    return [user.serialize() for user in User.query.all()]
+    return success_response({"user list": [user.serialize() for user in User.query.all()]})
 
 # clothing routes
 #   Create Clothing
 
-@app.route("/clothing/", methods=["POST"])
+@app.route("/clothing/create/", methods=["POST"])
 def upload():
     """
     Endpoint for uploading an image to AWS given its base64 form,
@@ -199,16 +199,18 @@ def upload():
 
 #   Get Clothing list by user
 
-@app.route("/clothing/", methods=["POST"])
+@app.route("/clothing/list/", methods=["POST"])
 def get_clothing():
     """
     Endpoint for getting a list of clothing by username
     """
     body = json.loads(request.data)
     username = body.get("username")
+    assets = ""
     user = User.query.filter_by(username=username).first()
-    clothing = [clothes.serialize() for clothes in Clothing.query.filter_by(user_id=user.id)]
-    return success_response({"clothing": clothing})
+    for clothing in Clothing.query.filter_by(user_id=user.id):
+        assets += clothing.get_link() + " "
+    return success_response({"assets": assets})
 
 @app.route("/clothing/filter/", methods=["POST"])
 def filter_clothing():
@@ -219,8 +221,11 @@ def filter_clothing():
     body = json.loads(request.data)
     username = body.get("username")
     classification = body.get("classification")
+    assets = ""
     user = User.query.filter_by(username=username).first()
-    return [clothing.asset_serialize() for clothing in Clothing.query.filter_by(user_id=user.id, classification=classification)]
+    for clothing in Clothing.query.filter_by(user_id=user.id, classification=classification):
+        assets += clothing.get_link() + " "
+    return success_response({"assets": assets})
 
 #   Delete Clothing
 
@@ -239,12 +244,13 @@ def delete_clothing(id):
 # Outfit Routes
 #   Create Outfit
 
-@app.route("/outfit/", methods=["POST"])
+@app.route("/outfit/create/", methods=["POST"])
 def create_outfit():
     """
     Endpoint for creating an outfit
     """
     body = json.loads(request.data)
+    name = body.get("name")
     headwear_id = body.get("headwear_id")
     top_id = body.get("top_id")
     bottom_id = body.get("bottom_id")
@@ -252,6 +258,7 @@ def create_outfit():
     username = body.get("username")
     user = User.query.filter_by(username=username).first()
     outfit = Outfit(
+        name = name,
         headwear_id = headwear_id,
         top_id = top_id,
         bottom_id = bottom_id,
@@ -264,10 +271,10 @@ def create_outfit():
 
 #   Get Outfit list by user
 
-@app.route("/outfit/", methods=["POST"])
+@app.route("/outfit/list/", methods=["POST"])
 def get_outfits():
     """
-    Endpoint for getting all outfits by user id
+    Endpoint for getting all outfits by username
     """
     body = json.loads(request.data)
     username = body.get("username")
@@ -277,12 +284,14 @@ def get_outfits():
 
 #   Delete Outfit
 
-@app.route("/outfit/<int:id>/", methods=["DELETE"])
-def delete_outfit(id):
+@app.route("/outfit/delete/", methods=["DELETE"])
+def delete_outfit():
     """
-    Endpoint for deleting an outfit by id
+    Endpoint for deleting an outfit by name
     """
-    outfit = Outfit.query.filter_by(id=id).first()
+    body = json.loads(request.data)
+    name = body.get("name")
+    outfit = Outfit.query.filter_by(name=name).first()
     if outfit is None:
         return failure_response("Outfit not found")
     db.session.delete(outfit)
@@ -292,22 +301,24 @@ def delete_outfit(id):
 # Tag Routes
 #   Add tag
 
-@app.route("/tag/<int:outfit_id>/", methods=["POST"])
-def add_tag(outfit_id):
+@app.route("/tag/", methods=["POST"])
+def add_tag():
     """
-    Endpoint for creating and adding a tag to an outfit by outfit id
+    Endpoint for creating and adding a tag to an outfit by outfit name
     """
     body = json.loads(request.data)
     label = body.get("label")
+    outfit_name = body.get("outfit_name")
     tag = Tag.query.filter_by(label=label).first()
     if tag is None:
         tag = Tag(label=label)
         db.session.add(tag)
     if label is None:
         return failure_response("Lable not present", 400)
-    outfit = Outfit.query.filter_by(id=outfit_id).first()
+    outfit = Outfit.query.filter_by(name=outfit_name).first()
     outfit.tags.append(tag)
     db.session.commit()
+    return success_response(tag.serialize(), 201)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
