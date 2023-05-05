@@ -210,6 +210,18 @@ def get_clothing():
     clothing = [clothes.serialize() for clothes in Clothing.query.filter_by(user_id=user.id)]
     return success_response({"clothing": clothing})
 
+@app.route("/clothing/filter/", methods=["POST"])
+def filter_clothing():
+    """
+    Endpoint for getting a list of clothing by username 
+    filtered by classification
+    """
+    body = json.loads(request.data)
+    username = body.get("username")
+    classification = body.get("classification")
+    user = User.query.filter_by(username=username).first()
+    return [clothing.serialize() for clothing in Clothing.query.filter_by(user_id=user.id, classification=classification)]
+
 #   Delete Clothing
 
 @app.route("/clothing/<int:id>/", methods=["DELETE"])
